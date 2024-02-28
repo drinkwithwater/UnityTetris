@@ -27,6 +27,8 @@ namespace TetrisEngine
 		private Pooling<TetriminoBlock> mBlockPool = new Pooling<TetriminoBlock>();    
 		private Pooling<TetriminoView> mTetriminoPool = new Pooling<TetriminoView>();
 
+		private float downAccumulate = 0.0f;
+
 		private Tetrimino mCurrentTetrimino
 		{
 			get
@@ -123,8 +125,8 @@ namespace TetrisEngine
 			if (mPreview != null)
 				mTetriminoPool.Release(mPreview);
 			
-			mPreview = mTetriminoPool.Collect();
-			mPreview.InitiateTetrimino(tetrimino, true);
+			//mPreview = mTetriminoPool.Collect();
+			//mPreview.InitiateTetrimino(tetrimino, true);
 			mRefreshPreview = true;
 		}
 
@@ -153,7 +155,7 @@ namespace TetrisEngine
 			if (mCurrentTetrimino == null) return;
 
             //Rotate Right
-			if(Input.GetKeyDown(mGameSettings.rotateRightKey))
+			if(Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
 			{
 				if(mPlayfield.IsPossibleMovement(mCurrentTetrimino.currentPosition.x,
     											  mCurrentTetrimino.currentPosition.y,
@@ -166,7 +168,7 @@ namespace TetrisEngine
 			}
 
 			//Rotate Left
-			if (Input.GetKeyDown(mGameSettings.rotateLeftKey))
+			if (Input.GetKeyDown(KeyCode.Space))
             {
                 if (mPlayfield.IsPossibleMovement(mCurrentTetrimino.currentPosition.x,
                                                   mCurrentTetrimino.currentPosition.y,
@@ -179,7 +181,7 @@ namespace TetrisEngine
             }
 
             //Move piece to the left
-			if (Input.GetKeyDown(mGameSettings.moveLeftKey))
+			if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
             {
                 if (mPlayfield.IsPossibleMovement(mCurrentTetrimino.currentPosition.x - 1,
                                                   mCurrentTetrimino.currentPosition.y,
@@ -192,7 +194,7 @@ namespace TetrisEngine
             }
 
 			//Move piece to the right
-			if (Input.GetKeyDown(mGameSettings.moveRightKey))
+			if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
             {
                 if (mPlayfield.IsPossibleMovement(mCurrentTetrimino.currentPosition.x + 1,
                                                   mCurrentTetrimino.currentPosition.y,
@@ -206,18 +208,27 @@ namespace TetrisEngine
 
             //Make the piece fall faster
             //this is the only input with GetKey instead of GetKeyDown, because most of the time, users want to keep this button pressed and make the piece fall
-			if (Input.GetKey(mGameSettings.moveDownKey))
-            {
-                if (mPlayfield.IsPossibleMovement(mCurrentTetrimino.currentPosition.x,
-                                                  mCurrentTetrimino.currentPosition.y + 1,
-                                                  mCurrentTetrimino,
-				                                  mCurrentTetrimino.currentRotation))
-                {
-					mCurrentTetrimino.currentPosition = new Vector2Int(mCurrentTetrimino.currentPosition.x, mCurrentTetrimino.currentPosition.y + 1);               
-                }
+			if (Input.GetKey(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
+			{
+				downAccumulate = downAccumulate + Time.deltaTime;
+				if (downAccumulate > 0.05)
+				{
+					downAccumulate = 0.0f;
+					if (mPlayfield.IsPossibleMovement(mCurrentTetrimino.currentPosition.x,
+													  mCurrentTetrimino.currentPosition.y + 1,
+													  mCurrentTetrimino,
+													  mCurrentTetrimino.currentRotation))
+					{
+						mCurrentTetrimino.currentPosition = new Vector2Int(mCurrentTetrimino.currentPosition.x, mCurrentTetrimino.currentPosition.y + 1);               
+					}
+				}
             }
+			else
+			{
+				downAccumulate = 0.0f;
+			}
 
-            //This part is responsable for rendering the preview piece in the right position
+			//This part is responsable for rendering the preview piece in the right position
 			if(mRefreshPreview)
 			{
 				var y = mCurrentTetrimino.currentPosition.y;
@@ -229,7 +240,10 @@ namespace TetrisEngine
 					y++;
 				}
 
-				mPreview.ForcePosition(mCurrentTetrimino.currentPosition.x, y - 1);
+				if (mPreview != null)
+				{
+					mPreview.ForcePosition(mCurrentTetrimino.currentPosition.x, y - 1);
+				}
 				mRefreshPreview = false;
 			}
 		}
